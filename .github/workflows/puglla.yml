@@ -2,9 +2,9 @@ name: CI/CD Pipeline for Practica1
 
 on:
   push:
-    branches: [ main ]
+    branches: [ puglla ]
   pull_request:
-    branches: [ main ]
+    branches: [ puglla ]
 
 jobs:
   test:
@@ -29,7 +29,7 @@ jobs:
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/puglla'
     steps:
     - uses: actions/checkout@v3
     
@@ -61,7 +61,7 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/puglla'
     steps:
     - name: Deploy to VPS
       uses: appleboy/ssh-action@v1.0.0
