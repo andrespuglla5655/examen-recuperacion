@@ -27,6 +27,7 @@ jobs:
       run: |
         python -m pytest tests/ -v
 
+
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
@@ -42,29 +43,21 @@ jobs:
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
-        password: ${{ secrets.GHCR_TOKEN }}
-      continue-on-error: true
-        
-    - name: Build and push Docker image
+        password: ${{ secrets.GITHUB_TOKEN }}   # CORRECTO
+
+    - name: Build & Push Image
       uses: docker/build-push-action@v4
       with:
         context: .
-        file: ./puglla
-        push: ${{ secrets.GHCR_TOKEN != '' }}
+        file: ./Dockerfile              # 👈 USAR TU DOCKERFILE REAL
+        push: true
         tags: ghcr.io/${{ github.repository_owner }}/examen-recuperacion:puglla-3.0.0
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-        
-    - name: Skip Docker push if no credentials
-      if: ${{ secrets.GHCR_TOKEN == '' }}
-      run: |
-        echo "Skipping Docker push - no GHCR_TOKEN provided"
-        echo "To enable Docker push, add a GHCR_TOKEN secret to your repository"
+
 
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/puglla' && secrets.GHCR_TOKEN != ''
+    if: github.ref == 'refs/heads/puglla'
     steps:
     - uses: actions/checkout@v3
     
@@ -77,23 +70,7 @@ jobs:
         port: ${{ secrets.VPS_SSH_PORT }}
         source: "puglla.yml"
         target: "/home/${{ secrets.VPS_USER }}/puglla.yml"
-      continue-on-error: true
         
-    - name: Verify puglla.yml copy on VPS
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ secrets.VPS_HOST }}
-        username: ${{ secrets.VPS_USER }}
-        password: ${{ secrets.VPS_PASSWORD }}
-        port: ${{ secrets.VPS_SSH_PORT }}
-        script: |
-          if [ -f "/home/${{ secrets.VPS_USER }}/puglla.yml" ]; then
-            echo "puglla.yml successfully copied to VPS"
-          else
-            echo "WARNING: puglla.yml not found on VPS"
-          fi
-      continue-on-error: true
-          
     - name: Deploy on VPS via SSH
       uses: appleboy/ssh-action@v1.0.0
       with:
@@ -102,11 +79,6 @@ jobs:
         password: ${{ secrets.VPS_PASSWORD }}
         port: ${{ secrets.VPS_SSH_PORT }}
         script: |
-          echo "Pulling Docker image..."
+          docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
           docker pull ghcr.io/${{ github.repository_owner }}/examen-recuperacion:puglla-3.0.0
-          
-          echo "Deploying with Docker Swarm..."
           docker stack deploy -c puglla.yml puglla
-          
-          echo "Deployment completed successfully!"
-      continue-on-error: true
