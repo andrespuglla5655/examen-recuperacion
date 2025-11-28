@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   practica1:
-    image: ghcr.io/andrespuglla5655/practica1:puglla-999cc6b
+    image: ghcr.io/andrespuglla5655/practica1:puglla-1.0.5
     ports:
       - "80:5000"
     healthcheck:
