@@ -27,7 +27,6 @@ jobs:
       run: |
         python -m pytest tests/ -v
 
-
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
@@ -43,16 +42,15 @@ jobs:
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
+        password: ${{ secrets.GHCR_TOKEN }}
+        
     - name: Build & Push Image
       uses: docker/build-push-action@v4
       with:
         context: .
-        file: ./puglla           # 👈 ESTE ES TU DOCKERFILE “PUGLLA”
+        file: ./puglla
         push: true
         tags: ghcr.io/${{ github.repository_owner }}/examen-recuperacion:puglla-3.0.0
-
 
   deploy:
     needs: build-and-push
@@ -79,6 +77,6 @@ jobs:
         password: ${{ secrets.VPS_PASSWORD }}
         port: ${{ secrets.VPS_SSH_PORT }}
         script: |
-          docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+          docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GHCR_TOKEN }}
           docker pull ghcr.io/${{ github.repository_owner }}/examen-recuperacion:puglla-3.0.0
           docker stack deploy -c puglla.yml puglla
