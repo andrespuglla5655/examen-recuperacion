@@ -63,9 +63,14 @@ class AppTestCase(unittest.TestCase):
         data = json.loads(response.get_data(as_text=True))
         self.assertIn('error', data)
 
-    def test_home_endpoint(self):
-        """Test that home endpoint works"""
+    def test_home_page_returns_200(self):
+        """Test that home page loads correctly"""
         response = self.app.get('/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_api_docs_endpoint(self):
+        """Test that API documentation endpoint works"""
+        response = self.app.get('/api')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content_type, 'application/json')
 

@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import random
 
 app = Flask(__name__)
@@ -12,35 +12,45 @@ def generate_fake_ai_response(question):
     question = question.lower()
     
     # Responses based on question keywords
-    if 'hello' in question or 'hi' in question:
+    if 'hello' in question or 'hi' in question or 'hola' in question:
         responses = [
             "Hello there! How can I assist you today?",
             "Hi! Nice to meet you. What can I help with?",
-            "Greetings! I'm here to help with your queries."
+            "Greetings! I'm here to help with your queries.",
+            "¡Hola! ¿En qué puedo ayudarte hoy?",
+            "¡Hey! Qué gusto verte por aquí. ¿Qué necesitas?"
         ]
-    elif 'weather' in question:
+    elif 'weather' in question or 'tiempo' in question:
         responses = [
             "I don't have real-time weather data, but I suggest checking a weather service!",
             "Weather information requires live data which I can't access.",
-            "For accurate weather forecasts, please check dedicated weather websites."
+            "For accurate weather forecasts, please check dedicated weather websites.",
+            "No tengo acceso a datos climáticos en tiempo real, te recomiendo consultar un servicio meteorológico.",
+            "Para información precisa sobre el clima, por favor consulta sitios especializados."
         ]
-    elif 'name' in question:
+    elif 'name' in question or 'nombre' in question:
         responses = [
             "I'm your friendly AI assistant for this practice exercise!",
             "You can call me FakeAI, your practice assistant.",
-            "I'm an AI simulation created for educational purposes."
+            "I'm an AI simulation created for educational purposes.",
+            "Soy tu asistente de IA amigable para este ejercicio práctico.",
+            "Puedes llamarme FakeAI, tu asistente de práctica."
         ]
-    elif 'help' in question:
+    elif 'help' in question or 'ayuda' in question:
         responses = [
             "I can answer simple questions! Try asking about my name, the weather, or just say hello.",
             "I'm here to demonstrate a Flask API with simulated AI responses.",
-            "Ask me anything and I'll give you a simulated AI response!"
+            "Ask me anything and I'll give you a simulated AI response!",
+            "¡Puedo responder preguntas simples! Intenta preguntarme por mi nombre, el clima o simplemente saluda.",
+            "Estoy aquí para demostrar una API Flask con respuestas de IA simuladas."
         ]
-    elif 'bye' in question or 'goodbye' in question:
+    elif 'bye' in question or 'goodbye' in question or 'adios' in question:
         responses = [
             "Goodbye! Feel free to come back with more questions.",
             "See you later! Thanks for trying out this demo.",
-            "Farewell! Hope this was helpful for your practice."
+            "Farewell! Hope this was helpful for your practice.",
+            "¡Adiós! Vuelve cuando quieras hacer más preguntas.",
+            "¡Hasta luego! Gracias por probar esta demostración."
         ]
     else:
         # Default responses for general questions
@@ -51,10 +61,21 @@ def generate_fake_ai_response(question):
             "Based on my analysis (just kidding!), I recommend reviewing Flask APIs for real implementations.",
             "As an AI assistant, I appreciate your curiosity. Keep experimenting with code!",
             "I've consulted my vast knowledge base (okay, not really) to provide this response.",
-            "This is a placeholder response from our simulated AI. Great job setting up the project!"
+            "This is a placeholder response from our simulated AI. Great job setting up the project!",
+            "Es una pregunta interesante. En una implementación real, la analizaría profundamente.",
+            "Gracias por tu consulta. Esta es una respuesta simulada con fines demostrativos.",
+            "He procesado tu pregunta y determinado que este es un excelente ejercicio de aprendizaje.",
+            "Basado en mi análisis (¡solo bromeaba!), te recomiendo revisar APIs de Flask para implementaciones reales."
         ]
     
     return random.choice(responses)
+
+@app.route('/', methods=['GET'])
+def home():
+    """
+    Home page with HTML interface
+    """
+    return render_template('index.html')
 
 @app.route('/ask', methods=['POST'])
 def ask_question():
@@ -90,17 +111,26 @@ def ask_question():
     except Exception as e:
         return jsonify({'error': 'Internal server error'}), 500
 
-@app.route('/', methods=['GET'])
-def home():
+# API documentation endpoint
+@app.route('/api', methods=['GET'])
+def api_docs():
     """
-    Home endpoint with information about the API
+    API documentation endpoint
     """
     return jsonify({
         'message': 'Fake AI Flask API',
-        'endpoint': '/ask',
-        'method': 'POST',
-        'request_format': {'question': 'Your question here'},
-        'response_format': {'answer': 'Simulated AI response'}
+        'endpoints': {
+            '/': 'HTML interface',
+            '/ask': 'POST - Ask a question',
+            '/api': 'GET - API documentation'
+        },
+        '/ask': {
+            'method': 'POST',
+            'request_format': {'question': 'Your question here'},
+            'response_format': {'answer': 'Simulated AI response'},
+            'example_request': {'question': 'Hello, how are you?'},
+            'example_response': {'answer': 'Hello there! How can I assist you today?'}
+        }
     }), 200
 
 if __name__ == '__main__':

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake AI Assistant - Puglla</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f4fc;
+            border-radius: 5px;
+            display: none;
+        }
+        .result h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            color: #3498db;
+        }
+        .api-info {
+            background-color: #fff8e1;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Fake AI Assistant</h1>
+        <p>¡Bienvenido! Hazme cualquier pregunta y haré mi mejor esfuerzo por responderla.</p>
+        
+        <form id="questionForm">
+            <div class="form-group">
+                <label for="question">Tu pregunta:</label>
+                <input type="text" id="question" name="question" placeholder="Ej: ¿Cómo estás?, ¿Cuál es tu nombre?, ¿Qué tiempo hace?" required>
+            </div>
+            <button type="submit">Enviar pregunta</button>
+        </form>
+        
+        <div class="loading" id="loading">
+            <p>💭 Pensando...</p>
+        </div>
+        
+        <div class="result" id="result">
+            <h3>Respuesta:</h3>
+            <p id="answer"></p>
+        </div>
+        
+        <div class="api-info">
+            <h3>💡 Información de la API</h3>
+            <p>También puedes usar la API directamente enviando una solicitud POST a <code>/ask</code> con el siguiente formato:</p>
+            <pre>{
+  "question": "Tu pregunta aquí"
+}</pre>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('questionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const question = document.getElementById('question').value;
+            const resultDiv = document.getElementById('result');
+            const answerElement = document.getElementById('answer');
+            const loadingDiv = document.getElementById('loading');
+            
+            // Mostrar indicador de carga
+            loadingDiv.style.display = 'block';
+            resultDiv.style.display = 'none';
+            
+            // Enviar solicitud a la API
+            fetch('/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({question: question})
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Ocultar indicador de carga
+                loadingDiv.style.display = 'none';
+                
+                if (data.answer) {
+                    answerElement.textContent = data.answer;
+                    resultDiv.style.display = 'block';
+                } else if (data.error) {
+                    answerElement.textContent = 'Error: ' + data.error;
+                    resultDiv.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                // Ocultar indicador de carga
+                loadingDiv.style.display = 'none';
+                answerElement.textContent = 'Error al conectar con el servidor: ' + error.message;
+                resultDiv.style.display = 'block';
+            });
+        });
+    </script>
+</body>
+</html>
