@@ -1,63 +1,113 @@
-name: Build & Deploy App
+name: CI/CD Pipeline for Examen Recuperacion
 
 on:
   push:
-    branches:
-      - puglla   # 👈 tu branch principal
+    branches: [ puglla ]
+  pull_request:
+    branches: [ puglla ]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest
+        
+    - name: Run tests
+      run: |
+        python -m pytest tests/ -v
 
-      # 🔐 Login al GitHub Container Registry
-      - name: Log in to GHCR
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      # 🏗️ Construir imagen Docker
-      - name: Build Docker image
-        run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/examen-recuperacion:latest .
-
-      # 🚀 Subir imagen al GHCR
-      - name: Push Docker image
-        run: |
-          docker push ghcr.io/${{ github.repository_owner }}/examen-recuperacion:latest
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/puglla'
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GHCR_TOKEN }}
+        
+    - name: Build the Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        file: ./puglla
+        load: true
+        tags: ghcr.io/${{ github.repository_owner }}/examen-recuperacion:puglla-3.0.0
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    - name: Tag & Push Image to GHCR
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        file: ./puglla
+        push: true
+        tags: ghcr.io/${{ github.repository_owner }}/examen-recuperacion:puglla-3.0.0
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
   deploy:
-    needs: build
+    needs: build-and-push
     runs-on: ubuntu-latest
-
+    if: github.ref == 'refs/heads/puglla'
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      # 📦 Copiar archivos al servidor
-      - name: Copy files to server
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "*"
-          target: "/home/${{ secrets.SERVER_USER }}/examen-recuperacion"
-
-      # ⚡ Desplegar en el servidor
-      - name: Deploy on server
-        uses: appleboy/ssh-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            cd /home/${{ secrets.SERVER_USER }}/examen-recuperacion
-            docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-            docker pull ghcr.io/${{ github.repository_owner }}/examen-recuperacion:latest
-            docker stack deploy --with-registry-auth -c stack.yml examen
+    - uses: actions/checkout@v3
+    
+    - name: Copy puglla.yml to VPS (SCP)
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        password: ${{ secrets.VPS_PASSWORD }}
+        port: ${{ secrets.VPS_SSH_PORT }}
+        source: "puglla.yml"
+        target: "/home/${{ secrets.VPS_USER }}/puglla.yml"
+        
+    - name: Verify puglla.yml copy on VPS
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        password: ${{ secrets.VPS_PASSWORD }}
+        port: ${{ secrets.VPS_SSH_PORT }}
+        script: |
+          if [ -f "/home/${{ secrets.VPS_USER }}/puglla.yml" ]; then
+            echo "puglla.yml successfully copied to VPS"
+          else
+            echo "ERROR: puglla.yml not found on VPS"
+            exit 1
+          fi
+          
+    - name: Deploy on VPS via SSH
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        password: ${{ secrets.VPS_PASSWORD }}
+        port: ${{ secrets.VPS_SSH_PORT }}
+        script: |
+          echo "Pulling Docker image..."
+          docker pull ghcr.io/${{ github.repository_owner }}/examen-recuperacion:puglla-3.0.0
+          
+          echo "Deploying with Docker Swarm..."
+          docker stack deploy -c puglla.yml puglla
+          
+          echo "Deployment completed successfully!"
