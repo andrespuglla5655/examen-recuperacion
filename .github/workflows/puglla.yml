@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ puglla ]
 
+permissions:
+  packages: write
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -50,33 +54,4 @@ jobs:
         context: .
         file: ./puglla
         push: true
-        tags: ghcr.io/${{ github.repository_owner }}/examen-recuperacion:puglla-3.0.0
-
-  deploy:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/puglla'
-    steps:
-    - uses: actions/checkout@v3
-    
-    - name: Copy puglla.yml to VPS (SCP)
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ secrets.VPS_HOST }}
-        username: ${{ secrets.VPS_USER }}
-        password: ${{ secrets.VPS_PASSWORD }}
-        port: ${{ secrets.VPS_SSH_PORT }}
-        source: "puglla.yml"
-        target: "/home/${{ secrets.VPS_USER }}/puglla.yml"
-        
-    - name: Deploy on VPS via SSH
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ secrets.VPS_HOST }}
-        username: ${{ secrets.VPS_USER }}
-        password: ${{ secrets.VPS_PASSWORD }}
-        port: ${{ secrets.VPS_SSH_PORT }}
-        script: |
-          docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GHCR_TOKEN }}
-          docker pull ghcr.io/${{ github.repository_owner }}/examen-recuperacion:puglla-3.0.0
-          docker stack deploy -c puglla.yml puglla
+        tags: ghcr.io/${{ github.repository_owner }}/puglla:3.0.0
