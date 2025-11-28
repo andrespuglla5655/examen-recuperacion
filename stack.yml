@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  practica1:
+    image: ghcr.io/andrespuglla5655/practica1:puglla-1.0.5
+    ports:
+      - "80:5000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.practica1.rule=Host(`puglla.byronrm.com`)"
+        - "traefik.http.services.practica1.loadbalancer.server.port=5000"
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
