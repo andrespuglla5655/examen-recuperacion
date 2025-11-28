@@ -43,13 +43,13 @@ jobs:
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}   # CORRECTO
+        password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build & Push Image
       uses: docker/build-push-action@v4
       with:
         context: .
-        file: ./Dockerfile              # 👈 USAR TU DOCKERFILE REAL
+        file: ./puglla           # 👈 ESTE ES TU DOCKERFILE “PUGLLA”
         push: true
         tags: ghcr.io/${{ github.repository_owner }}/examen-recuperacion:puglla-3.0.0
 
