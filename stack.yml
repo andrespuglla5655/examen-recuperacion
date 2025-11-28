@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   puglla:
-    image: ghcr.io/andrespuglla5655/practica1:puglla-1.0.5
+    image: ghcr.io/andrespuglla5655/examen-recuperacion:puglla-1.0.5
     deploy:
       replicas: 1
       labels:

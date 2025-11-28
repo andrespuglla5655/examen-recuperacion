@@ -1,9 +1,9 @@
 # Makefile for Flask AI Application
 
 # Variables
-IMAGE_NAME = ghcr.io/andrespuglla5655/practica1
+IMAGE_NAME = ghcr.io/andrespuglla5655/examen-recuperacion
 TAG = puglla-1.0.5
-CONTAINER_NAME = practica1-app
+CONTAINER_NAME = examen-recuperacion-app
 
 # Default target
 .PHONY: help
