@@ -1,28 +1,36 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  practica1:
+  puglla:
     image: ghcr.io/andrespuglla5655/practica1:puglla-1.0.5
-    ports:
-      - "80:5000"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     deploy:
+      replicas: 1
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.puglla.entrypoints=http"
+        - "traefik.http.routers.puglla.rule=Host(`puglla.byronrm.com`)"
+        - "traefik.http.middlewares.puglla-https-redirect.redirectscheme.scheme=https"
+        - "traefik.http.routers.puglla.middlewares=puglla-https-redirect"
+        - "traefik.http.routers.puglla-secure.entrypoints=https"
+        - "traefik.http.routers.puglla-secure.rule=Host(`puglla.byronrm.com`)"
+        - "traefik.http.routers.puglla-secure.tls=true"
+        - "traefik.http.routers.puglla-secure.tls.certresolver=http"
+        - "traefik.http.routers.puglla-secure.service=puglla"
+        - "traefik.http.services.puglla.loadbalancer.server.port=5000"
+        - "traefik.docker.network=traefik-public"
       restart_policy:
         condition: on-failure
         delay: 5s
         max_attempts: 3
-      labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.practica1.rule=Host(`puglla.byronrm.com`)"
-        - "traefik.http.services.practica1.loadbalancer.server.port=5000"
     networks:
-      - proxy
+      - traefik-public
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 networks:
-  proxy:
+  traefik-public:
     external: true
