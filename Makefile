@@ -2,7 +2,7 @@
 
 # Variables
 IMAGE_NAME = ghcr.io/andrespuglla5655/examen-recuperacion
-TAG = puglla-1.0.5
+TAG = puglla-3.0.0
 CONTAINER_NAME = examen-recuperacion-app
 
 # Default target
@@ -37,7 +37,7 @@ run:
 # Build Docker image
 .PHONY: docker-build
 docker-build:
-	docker build -t $(IMAGE_NAME):$(TAG) .
+	docker build -t $(IMAGE_NAME):$(TAG) -f puglla .
 
 # Run application in Docker container
 .PHONY: docker-run
